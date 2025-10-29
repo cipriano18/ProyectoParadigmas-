@@ -2,8 +2,7 @@ FROM swipl:latest
 WORKDIR /app
 COPY . /app
 
-# Expone el puerto que Railway usa
 EXPOSE 8080
 
-# Evita modo interactivo y arranca directamente el servidor
-CMD ["swipl", "-q", "-g", "start", "-t", "halt", "supermarket.pl"]
+# Ejecuta Prolog sin modo interactivo y lanza supermarket.pl
+CMD ["swipl", "-q", "-s", "supermarket.pl", "-g", "start", "-t", "halt"]
