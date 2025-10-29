@@ -134,7 +134,6 @@ orders_get_handler(_Request) :-
 % =========================
 % POST /orders/update
 % =========================
-% =========================
 
 update_order_status_handler(Request) :-
     http_read_json_dict(Request, Data),
@@ -150,8 +149,7 @@ update_order_status_handler(Request) :-
                    DataRows,
                    row(Date, Code, Product, Quantity, Place, Receiver, NewStatus, OrderCode),
                    UpdatedRows)
-      
-            open('orders.csv', write, Stream, [encoding(utf8)]),
+        ->  open('orders.csv', write, Stream, [encoding(utf8)]),
             csv_write_stream(Stream, [Header | UpdatedRows], []),
             close(Stream),
             reply_json(json{
