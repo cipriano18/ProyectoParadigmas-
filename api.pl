@@ -1,21 +1,32 @@
-:- module(api, [start_server/1]).
+:- module(api, [start_server/0]).
 :- use_module(library(http/thread_httpd)).
 :- use_module(library(http/http_dispatch)).
-:- use_module(library(http/http_json)).
 :- use_module(library(http/http_parameters)).
+:- use_module(library(http/http_json)).
 
 :- use_module(products).
 :- use_module(orders).
 
+% =========================
+% Handlers principales
+% =========================
 :- http_handler(root(products), products_handler, []).
 :- http_handler(root(category), category_handler, []).
 :- http_handler(root(update), update_stock, []).
+:- http_handler(root(orders), orders_get_handler, [method(get)]).
 :- http_handler(root(orders), orders_post_handler, [method(post)]).
-:- http_handler(root(orders/list), orders_get_handler, [method(get)]).
 
-start_server(Port) :-
+% =========================
+% Inicio del servidor
+% =========================
+start_server :-
+    (   getenv('PORT', PortAtom)
+    ->  atom_number(PortAtom, Port)
+    ;   Port = 8080
+    ),
     http_server(http_dispatch, [port(Port), bind_address('0.0.0.0')]),
-    format('===> Servidor escuchando en todas las interfaces (~w)~n', [Port]).
+    format(' Servidor iniciado en el puerto ~w~n', [Port]).
+
 
 % =========================
 % GET /products?name=Banano
