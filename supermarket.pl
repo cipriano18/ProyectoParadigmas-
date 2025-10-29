@@ -6,8 +6,6 @@
 :- use_module(products).
 :- use_module(api).
 
-:- initialization(start).
-
 start :-
     load_products,
     (   getenv('PORT', PortAtom)
@@ -18,10 +16,6 @@ start :-
     http_server(http_dispatch, [port(Port), bind_address('0.0.0.0')]),
     format('===> Servidor escuchando en todas las interfaces (~w)~n', [Port]),
     writeln('Productos cargados correctamente.').
-
-
-
-
 
 % consult('C:/Users/Reyner/Documents/UNA_2025/II_SEMESTRE/PARADIGMAS/Proyecto_prolog/supermarket.pl').
 % consult('supermarket.pl').
