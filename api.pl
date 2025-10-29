@@ -83,16 +83,19 @@ category_handler(Request) :-
 
 % Endpoint "CREATE" para ORDENES:
 % /update?code=P0016&quantity=5&place=Cartago&receiver=Cipriano&status=Entregado
-
 update_stock(Request) :-
-    http_parameters(Request, [
-        code(Code, [atom]),
-        quantity(Quantity, [integer]),
-        place(Place, [atom]),
-        receiver(Receiver, [atom]),
-        date(Date, [atom]),
-        status(Status, [optional(true), atom]]
-    ]),
+   
+    http_read_json_dict(Request, Data),
+
+    % Extraer campos del JSON
+    Code = Data.code,
+    Quantity = Data.quantity,
+    Place = Data.place,
+    Receiver = Data.receiver,
+    Date = Data.date,
+    ( _{status: S} :< Data -> Status = S ; Status = 'Pendiente' ),
+
+    % Buscar producto y registrar la orden
     (   product(Code, Name, Category, Price, Stock, Unit, Description)
     ->  NewStock is Stock - Quantity,
         retract(product(Code, Name, Category, Price, Stock, Unit, Description)),
