@@ -12,7 +12,7 @@
 start_server :-
     (   getenv('PORT', PortAtom)
     ->  atom_number(PortAtom, Port)
-    ;   Port = 8080  % fallback si no existe la variable
+    ;   Port = 8080
     ),
     http_server(http_dispatch, [port(Port), bind_address('0.0.0.0')]),
     format('Servidor iniciado en el puerto ~w~n', [Port]).
