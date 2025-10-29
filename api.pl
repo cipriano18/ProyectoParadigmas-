@@ -76,36 +76,36 @@ category_handler(Request) :-
     reply_json(Results).
 
 % =========================
-% POST /orders → Crear una orden 
+% POST /orders Crear una orden 
 % =========================
 orders_post_handler(Request) :-
     http_read_json_dict(Request, Data),
 
-    % Extraer campos del JSON recibido
+    % Extraer campos del JSON recibido 
     Code = Data.code,
     Name = Data.name,
     Quantity = Data.quantity,
-    Place = Data.place,
-    Receiver = Data.receiver,
+    DeliveryPlace = Data.deliveryPlace,  
+    ReceiverName = Data.receiverName,    
     Date = Data.date,
     ( _{status:S} :< Data -> Status = S ; Status = 'Pendiente' ),
 
-    log_order(Date, Code, Name, Quantity, Place, Receiver, Status, OrderCode),
+    % Registrar la orden en CSV
+    log_order(Date, Code, Name, Quantity, DeliveryPlace, ReceiverName, Status, OrderCode),
 
-    % Devolver respuesta JSON al frontend
     reply_json(json{
         status: "Pedido registrado correctamente",
-        code: Code,
-        product: Name,
-        quantity: Quantity,
-        delivery_place: Place,
-        receiver: Receiver,
-        order_code: OrderCode,
-        date: Date,
-        order_status: Status
+         Date: Date,
+                Code: Code,
+                Product: Product,
+                Quantity: Quantity,
+                DeliveryPlace: DeliveryPlace,  
+                ReceiverName: ReceiverName,   
+                Status: Status,
+                OrderCode: OrderCode
     }).
 % =========================
-% GET /orders/list → Listar todas las órdenes
+% GET /orders/list 
 % =========================
 orders_get_handler(_Request) :-
     (   exists_file('orders.csv')
@@ -113,18 +113,18 @@ orders_get_handler(_Request) :-
         Rows = [_Header | Data],
         findall(
             json{
-                date: Date,
-                code: Code,
-                product: Product,
-                quantity: Quantity,
-                delivery_place: Place,
-                receiver: Receiver,
-                status: Status,
-                order_code: OrderCode
+                Date: Date,
+                Code: Code,
+                Product: Product,
+                Quantity: Quantity,
+                DeliveryPlace: DeliveryPlace,  
+                ReceiverName: ReceiverName,   
+                Status: Status,
+                OrderCode: OrderCode
             },
             (
                 member(Row, Data),
-                Row =.. [_|[Date, Code, Product, Quantity, Place, Receiver, Status, OrderCode]]
+                Row =.. [_|[Date, Code, Product, Quantity, DeliveryPlace, ReceiverName, Status, OrderCode]]
             ),
             JsonList
         ),
@@ -134,26 +134,34 @@ orders_get_handler(_Request) :-
 % =========================
 % POST /orders/update
 % =========================
-
 update_order_status_handler(Request) :-
     http_read_json_dict(Request, Data),
-    atom_string(OrderCode, Data.order_code),   
-    NewStatus = Data.status,
+
+    % Extraer los campos con el mismo formato del CSV
+    OrderCode = Data.OrderCode,
+    NewStatus = Data.Status,
 
     (   exists_file('orders.csv')
-    ->  csv_read_file('orders.csv', Rows, [functor(row), arity(8)]),
+ 
+        csv_read_file('orders.csv', Rows, [functor(row), arity(8)]),
         Rows = [Header | DataRows],
-        (   select(row(Date, Code, Product, Quantity, Place, Receiver, _OldStatus, OrderCode),
-                   DataRows,
-                   row(Date, Code, Product, Quantity, Place, Receiver, NewStatus, OrderCode),
-                   UpdatedRows)
-        ->  open('orders.csv', write, Stream, [encoding(utf8)]),
+
+        % Buscar la fila con el código y reemplazar el estado
+        (   select(
+                row(Date, Code, Product, Quantity, DeliveryPlace, ReceiverName, _OldStatus, OrderCode),
+                DataRows,
+                row(Date, Code, Product, Quantity, DeliveryPlace, ReceiverName, NewStatus, OrderCode),
+                UpdatedRows
+            )
+        
+            open('orders.csv', write, Stream, [encoding(utf8)]),
             csv_write_stream(Stream, [Header | UpdatedRows], []),
             close(Stream),
+
             reply_json(json{
                 status: "Estado de orden actualizado correctamente",
-                order_code: OrderCode,
-                new_status: NewStatus
+                OrderCode: OrderCode,
+                NewStatus: NewStatus
             })
         ;   reply_json(json{error: "Orden no encontrada"}, [status(404)])
         )

@@ -6,7 +6,7 @@
 % =========================
 next_order_code(Code) :-
     (   exists_file('orders.csv')
-    ->  % Leer archivo y obtener la última línea
+    
         csv_read_file('orders.csv', Rows, [functor(row), arity(8)]),
         (   last(Rows, LastRow),
             arg(8, LastRow, LastCode),
