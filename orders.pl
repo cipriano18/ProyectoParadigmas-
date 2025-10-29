@@ -4,7 +4,7 @@
 % =========================================
 % log_order(Date, Code, ProductName, Quantity, Place, ReceiverName, Status, OrderCode)
 % =========================================
-log_order(Date, Code, ProductName, Quantity, Place, ReceiverName, StatusIn, OrderCode) :-
+log_order(Date, Code, ProductName, Quantity, Place, ReceiverName, StatusIn, _OrderCode) :-
     % Si no se pasa estado, usar 'Pendiente'
     (   var(StatusIn)
     ->  Status = 'Pendiente'
