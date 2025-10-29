@@ -4,7 +4,7 @@
 :- use_module(library(http/http_parameters)).
 :- use_module(library(http/http_json)).
 :- use_module(products).  % Importa los hechos
-
+:- use_module(orders).     % Importa los hechos
 :- http_handler(root(products), products_handler, []).
 :- http_handler(root(category), category_handler, []).
 :- http_handler(root(update), update_stock, []).
@@ -65,3 +65,41 @@ category_handler(Request) :-
         Results
     ),
     reply_json(Results).
+
+
+
+% ========================
+% Endpoint de ORDENES
+% ========================
+
+
+% Endpoint "CREATE" para ORDENES:
+% /update?code=P0016&quantity=5&place=Cartago&receiver=Cipriano&status=Entregado
+
+update_stock(Request) :-
+    http_parameters(Request, [
+        code(Code, [atom]),
+        quantity(Quantity, [integer]),
+        place(Place, [atom]),
+        receiver(Receiver, [atom]),
+        date(Date, [atom]),
+        status(Status, [optional(true), atom]]
+    ]),
+    (   product(Code, Name, Category, Price, Stock, Unit, Description)
+    ->  NewStock is Stock - Quantity,
+        retract(product(Code, Name, Category, Price, Stock, Unit, Description)),
+        assertz(product(Code, Name, Category, Price, NewStock, Unit, Description)),
+        update_csv(Code, NewStock),
+        log_order(Date, Code, Name, Quantity, Place, Receiver, Status, _OrderCode),
+        reply_json(json{
+            status: "Pedido registrado correctamente",
+            code: Code,
+            product: Name,
+            place: Place,
+            receiver: Receiver,
+            order_status: Status,
+            date: Date,
+            new_stock: NewStock
+        })
+    ;   reply_json(json{error: "Producto no encontrado"}, [status(404)])
+    ).
