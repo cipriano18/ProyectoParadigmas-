@@ -10,8 +10,8 @@
 :- http_handler(root(update), update_stock, []).
 
 start_server(Port) :-
-    http_server(http_dispatch, [port(Port)]),
-    writeln('Servidor iniciado en el puerto ':Port).
+    http_server(http_dispatch, [port(Port), bind_address('0.0.0.0')]),
+    format('Servidor iniciado en el puerto ~w~n', [Port]).
 
 % ========================
 % Endpoint de productos
