@@ -1,13 +1,14 @@
-:- module(api, [start_server/0]).
+:- module(api, [start_server/1]).
 :- use_module(library(http/thread_httpd)).
 :- use_module(library(http/http_dispatch)).
 :- use_module(library(http/http_parameters)).
 :- use_module(library(http/http_json)).
-
 :- use_module(products).
 :- use_module(orders).
 
-% Asegurar que el CSV de productos esté cargado
+% =========================
+% Asegurar que los productos estén cargados
+% =========================
 :- initialization(ensure_products_loaded).
 
 ensure_products_loaded :-
@@ -15,26 +16,26 @@ ensure_products_loaded :-
     ->  ( product(_, _, _, _, _, _, _) -> true ; load_products )
     ;   load_products
     ).
+
 % =========================
 % Handlers principales
 % =========================
 :- http_handler(root(products), products_handler, []).
 :- http_handler(root(category), category_handler, []).
 :- http_handler(root(update), update_stock, []).
-:- http_handler(root(orders), orders_get_handler, [method(get)]).
 :- http_handler(root(orders), orders_post_handler, [method(post)]).
+:- http_handler(root(orders/list), orders_get_handler, [method(get)]).
 
 % =========================
 % Inicio del servidor
 % =========================
-start_server :-
-    (   getenv('PORT', PortAtom)
-    ->  atom_number(PortAtom, Port)
-    ;   Port = 8080
+start_server(Port) :-
+    catch(
+        http_server(http_dispatch, [port(Port), bind_address('0.0.0.0')]),
+        error(socket_error(eaddrinuse, _), _),
+        format('⚠️  Puerto ~w ya está en uso, el servidor sigue activo.~n', [Port])
     ),
-    http_server(http_dispatch, [port(Port), bind_address('0.0.0.0')]),
-    format(' Servidor iniciado en el puerto ~w~n', [Port]).
-
+    format('✅ Servidor iniciado en el puerto ~w~n', [Port]).
 
 % =========================
 % GET /products?name=Banano
@@ -54,7 +55,6 @@ products_handler(Request) :-
     ),
     reply_json(Results).
 
-
 % =========================
 % GET /update?code=P0001&quantity=50
 % =========================
@@ -72,7 +72,6 @@ update_stock(Request) :-
     ;   reply_json(json{error: "Producto no encontrado"}, [status(404)])
     ).
 
-
 % =========================
 % GET /category?type=frutas
 % =========================
@@ -86,9 +85,8 @@ category_handler(Request) :-
     ),
     reply_json(Results).
 
-
 % =========================
-% POST /orders  → Crear una orden
+% POST /orders → Crear una orden
 % =========================
 orders_post_handler(Request) :-
     http_read_json_dict(Request, Data),
@@ -119,9 +117,8 @@ orders_post_handler(Request) :-
     ;   reply_json(json{error: "Producto no encontrado"}, [status(404)])
     ).
 
-
 % =========================
-% GET /orders → Listar todas las órdenes
+% GET /orders/list → Listar todas las órdenes
 % =========================
 orders_get_handler(_Request) :-
     (   exists_file('orders.csv')
