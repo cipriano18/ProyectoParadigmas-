@@ -134,16 +134,18 @@ orders_get_handler(_Request) :-
 % =========================
 % POST /orders/update
 % =========================
+% =========================
+
 update_order_status_handler(Request) :-
     http_read_json_dict(Request, Data),
     OrderCode = Data.order_code,
     NewStatus = Data.status,
 
     (   exists_file('orders.csv')
-
+    ->  % Leer todo el CSV
         csv_read_file('orders.csv', Rows, [functor(row), arity(8)]),
         Rows = [Header | DataRows],
-        % Buscar y actualizar
+        % Buscar y actualizar la fila
         (   select(row(Date, Code, Product, Quantity, Place, Receiver, _OldStatus, OrderCode),
                    DataRows,
                    row(Date, Code, Product, Quantity, Place, Receiver, NewStatus, OrderCode),
