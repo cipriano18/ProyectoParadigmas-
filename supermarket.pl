@@ -12,15 +12,14 @@ start :-
     load_products,
     (   getenv('PORT', PortAtom)
     ->  atom_number(PortAtom, Port)
-    ;   Port = 8080  % Fallback local
+    ;   Port = 8080
     ),
     format('===> Puerto detectado: ~w~n', [Port]),
-    http_server(http_dispatch, [
-        port(Port),
-        bind_address(any)      % 👈 esta es la opción correcta
-    ]),
+    http_server(http_dispatch, [port(Port), bind_address('0.0.0.0')]),
     format('===> Servidor escuchando en todas las interfaces (~w)~n', [Port]),
     writeln('Productos cargados correctamente.').
+
+
 
 
 
