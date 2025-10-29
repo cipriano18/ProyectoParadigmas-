@@ -1,12 +1,13 @@
-    :- use_module(products).
-    :- use_module(api).
+:- use_module(products).
+:- use_module(api).
 
-    :- initialization(start).
+:- initialization(start).
 
-    start :-
-        load_products,
-        start_server(8080),
-        writeln('Productos cargados correctamente.').
+start :-
+    load_products,
+    start_server,  % ✅ sin argumento, usa la versión que lee PORT
+    writeln('Productos cargados correctamente.').
+
 
 
 % consult('C:/Users/Reyner/Documents/UNA_2025/II_SEMESTRE/PARADIGMAS/Proyecto_prolog/supermarket.pl').
