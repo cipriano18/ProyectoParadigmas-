@@ -12,7 +12,7 @@ start :-
     format('===> Puerto detectado: ~w~n', [Port]),
     start_server(Port), 
     writeln('Productos cargados correctamente.').
-
+       thread_get_message(_).
 
 % consult('C:/Users/Reyner/Documents/UNA_2025/II_SEMESTRE/PARADIGMAS/Proyecto_prolog/supermarket.pl').
 % consult('supermarket.pl').
