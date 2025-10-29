@@ -75,23 +75,27 @@ category_handler(Request) :-
     reply_json(Results).
 
 % =========================
-% POST /orders → Crear una orden (sin validación de producto)
+% POST /orders → Crear una orden 
 % =========================
 orders_post_handler(Request) :-
     http_read_json_dict(Request, Data),
+
+    % Extraer campos del JSON recibido
     Code = Data.code,
+    Name = Data.name,
     Quantity = Data.quantity,
     Place = Data.place,
     Receiver = Data.receiver,
     Date = Data.date,
     ( _{status:S} :< Data -> Status = S ; Status = 'Pendiente' ),
 
-    log_order(Date, Code, "Producto no verificado", Quantity, Place, Receiver, Status, OrderCode),
+    log_order(Date, Code, Name, Quantity, Place, Receiver, Status, OrderCode),
 
+    % Devolver respuesta JSON al frontend
     reply_json(json{
         status: "Pedido registrado correctamente",
         code: Code,
-        product: "Producto no verificado",
+        product: Name,
         quantity: Quantity,
         delivery_place: Place,
         receiver: Receiver,
@@ -99,7 +103,6 @@ orders_post_handler(Request) :-
         date: Date,
         order_status: Status
     }).
-
 % =========================
 % GET /orders/list → Listar todas las órdenes
 % =========================
