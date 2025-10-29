@@ -5,7 +5,7 @@
 
 start :-
     load_products,
-    start_server,  % ✅ sin argumento, usa la versión que lee PORT
+    api:start_server,  % 👈 nota el "api:" — llama al predicado del módulo api
     writeln('Productos cargados correctamente.').
 
 
