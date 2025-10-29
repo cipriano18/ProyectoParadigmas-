@@ -13,9 +13,9 @@
 :- http_handler(root(products), products_handler, []).
 :- http_handler(root(category), category_handler, []).
 :- http_handler(root(update), update_stock, []).
-:- http_handler(root(orders), orders_get_handler, [method(get)]).
-:- http_handler(root(orders), orders_post_handler, [method(post)]).
 
+:- http_handler(root(orders), orders_post_handler, [method(post)]).
+:- http_handler(root(orders), orders_get_handler, [method(get)]).
 % =========================
 % Inicio del servidor
 % =========================
