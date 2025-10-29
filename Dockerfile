@@ -4,4 +4,4 @@ COPY . /app
 
 EXPOSE 8080
 
-CMD ["swipl", "-q", "-s", "supermarket.pl", "-t", "halt"]
+CMD ["swipl", "-q", "-t", "start", "supermarket.pl"]
