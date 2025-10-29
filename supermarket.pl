@@ -5,7 +5,12 @@
 
 start :-
     load_products,
-    api:start_server,  % 👈 nota el "api:" — llama al predicado del módulo api
+    (   getenv('PORT', PortAtom)
+    ->  atom_number(PortAtom, Port)
+    ;   Port = 8080  % Fallback
+    ),
+    format('===> Puerto detectado: ~w~n', [Port]),
+    http_server(http_dispatch, [port(Port), bind_address('0.0.0.0')]),
     writeln('Productos cargados correctamente.').
 
 
