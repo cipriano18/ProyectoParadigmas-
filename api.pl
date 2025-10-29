@@ -7,6 +7,14 @@
 :- use_module(products).
 :- use_module(orders).
 
+% Asegurar que el CSV de productos esté cargado
+:- initialization(ensure_products_loaded).
+
+ensure_products_loaded :-
+    (   current_predicate(product/7)
+    ->  ( product(_, _, _, _, _, _, _) -> true ; load_products )
+    ;   load_products
+    ).
 % =========================
 % Handlers principales
 % =========================
