@@ -10,8 +10,9 @@
 :- http_handler(root(products), products_handler, []).
 :- http_handler(root(category), category_handler, []).
 :- http_handler(root(update), update_stock, []).
-:- http_handler(root(orders), orders_handler, []).
-:- http_handler(root(orders), orders_handler, []).
+:- http_handler(root(orders), orders_handler, [method(post)]).
+:- http_handler(root(update), update_stock, []).
+
 start_server :-
     (   getenv('PORT', PortAtom)
     ->  atom_number(PortAtom, Port)
