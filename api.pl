@@ -10,7 +10,8 @@
 :- http_handler(root(products), products_handler, []).
 :- http_handler(root(category), category_handler, []).
 :- http_handler(root(update), update_stock, []).
-
+:- http_handler(root(update), update_stock, []).  
+:- http_handler(root(orders), orders_handler, []).
 start_server :-
     (   getenv('PORT', PortAtom)
     ->  atom_number(PortAtom, Port)
@@ -80,28 +81,20 @@ category_handler(Request) :-
 % Endpoint de ORDENES
 % ========================
 
-
-% Endpoint "CREATE" para ORDENES:
-% /update?code=P0016&quantity=5&place=Cartago&receiver=Cipriano&status=Entregado
 update_stock(Request) :-
-   
     http_read_json_dict(Request, Data),
-
-    % Extraer campos del JSON
     Code = Data.code,
     Quantity = Data.quantity,
     Place = Data.place,
     Receiver = Data.receiver,
     Date = Data.date,
     ( _{status: S} :< Data -> Status = S ; Status = 'Pendiente' ),
-
-    % Buscar producto y registrar la orden
     (   product(Code, Name, Category, Price, Stock, Unit, Description)
     ->  NewStock is Stock - Quantity,
         retract(product(Code, Name, Category, Price, Stock, Unit, Description)),
         assertz(product(Code, Name, Category, Price, NewStock, Unit, Description)),
         update_csv(Code, NewStock),
-        log_order(Date, Code, Name, Quantity, Place, Receiver, Status, _OrderCode),
+        log_order(Date, Code, Name, Quantity, Place, Receiver, Status, _),
         reply_json(json{
             status: "Pedido registrado correctamente",
             code: Code,
@@ -113,4 +106,33 @@ update_stock(Request) :-
             new_stock: NewStock
         })
     ;   reply_json(json{error: "Producto no encontrado"}, [status(404)])
+    ).
+
+
+% ========================
+% Endpoint GET /orders
+% ========================
+orders_handler(_Request) :-
+    (   exists_file('orders.csv')
+    ->  csv_read_file('orders.csv', Rows, [functor(row), arity(8)]),
+        Rows = [_Header | Data],
+        findall(
+            json{
+                date: Date,
+                code: Code,
+                product: Product,
+                quantity: Quantity,
+                delivery_place: Place,
+                receiver: Receiver,
+                status: Status,
+                order_code: OrderCode
+            },
+            (
+                member(Row, Data),
+                Row =.. [_|[Date, Code, Product, Quantity, Place, Receiver, Status, OrderCode]]
+            ),
+            JsonList
+        ),
+        reply_json(JsonList)
+    ;   reply_json([], [status(200)])
     ).
