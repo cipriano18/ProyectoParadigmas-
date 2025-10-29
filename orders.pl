@@ -15,11 +15,12 @@ next_order_code(Code) :-
     format(atom(Code), 'ORD~|~`0t~d~4+', [N1]).
 
 % =========================
-% Registrar una orden
+% Registrar una orden (sin imprimir nada en HTTP)
 % =========================
 log_order(Date, ProductCode, ProductName, Quantity, Place, ReceiverName, Status, OrderCode) :-
     next_order_code(OrderCode),
-    % Si no existe, crear encabezado
+
+    % Crear encabezado si el archivo no existe
     (   \+ exists_file('orders.csv')
     ->  open('orders.csv', write, Stream, [encoding(utf8)]),
         csv_write_stream(Stream, [row('Date','Code','Product','Quantity','DeliveryPlace','ReceiverName','Status','OrderCode')], []),
@@ -27,15 +28,9 @@ log_order(Date, ProductCode, ProductName, Quantity, Place, ReceiverName, Status,
     ;   true
     ),
 
+    % Escribir la nueva orden
     open('orders.csv', append, Stream, [encoding(utf8)]),
     csv_write_stream(Stream,
         [row(Date, ProductCode, ProductName, Quantity, Place, ReceiverName, Status, OrderCode)], []),
-    close(Stream),
+    close(Stream).
 
-    % Evitar que la consola de Railway falle por acentos
-    catch(
-        format('Pedido registrado: ~w (~w unidades) - ~w~n',
-               [ProductName, Quantity, OrderCode]),
-        error(io_error(_,_), _),
-        true
-    ).
