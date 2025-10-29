@@ -12,16 +12,16 @@ start :-
     load_products,
     (   getenv('PORT', PortAtom)
     ->  atom_number(PortAtom, Port)
-    ;   Port = 8080
+    ;   Port = 8080  % Fallback local
     ),
     format('===> Puerto detectado: ~w~n', [Port]),
     http_server(http_dispatch, [
         port(Port),
-        bind_address(any),      % 👈 usa "any" (mejor que 0.0.0.0)
-        tcp_socket(Socket)
+        bind_address(any)      % 👈 esta es la opción correcta
     ]),
     format('===> Servidor escuchando en todas las interfaces (~w)~n', [Port]),
     writeln('Productos cargados correctamente.').
+
 
 
 % consult('C:/Users/Reyner/Documents/UNA_2025/II_SEMESTRE/PARADIGMAS/Proyecto_prolog/supermarket.pl').
