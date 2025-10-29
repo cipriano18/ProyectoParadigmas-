@@ -94,16 +94,17 @@ orders_post_handler(Request) :-
     log_order(Date, Code, Name, Quantity, DeliveryPlace, ReceiverName, Status, OrderCode),
 
     reply_json(json{
-        "status": "Pedido registrado correctamente",
-        "Date": Date,
-        "Code": Code,
-        "Product": Name,
-        "Quantity": Quantity,
-        "DeliveryPlace": DeliveryPlace,
-        "ReceiverName": ReceiverName,
-        "Status": Status,
-        "OrderCode": OrderCode
+        status:"Pedido registrado correctamente",
+        date:Date,
+        code:Code,
+        product:Name,
+        quantity:Quantity,
+        deliveryPlace:DeliveryPlace,
+        receiverName:ReceiverName,
+        orderStatus:Status,
+        orderCode:OrderCode
     }).
+
 % =========================
 % GET /orders/list 
 % =========================
@@ -113,14 +114,14 @@ orders_get_handler(_Request) :-
         Rows = [_Header | Data],
         findall(
             json{
-                "Date": Date,
-                "Code": Code,
-                "Product": Product,
-                "Quantity": Quantity,
-                "DeliveryPlace": DeliveryPlace,
-                "ReceiverName": ReceiverName,
-                "Status": Status,
-                "OrderCode": OrderCode
+                date:Date,
+                code:Code,
+                product:Product,
+                quantity:Quantity,
+                deliveryPlace:DeliveryPlace,  
+                receiverName:ReceiverName,   
+                status:Status,
+                orderCode:OrderCode
             },
             (
                 member(Row, Data),
@@ -131,13 +132,14 @@ orders_get_handler(_Request) :-
         reply_json(JsonList)
     ;   reply_json([], [status(200)])
     ).
+
 % =========================
-% POST /orders/update
+% POST /orders/update  Actualizar estado
 % =========================
 update_order_status_handler(Request) :-
     http_read_json_dict(Request, Data),
-    OrderCode = Data.OrderCode,
-    NewStatus = Data.Status,
+    OrderCode = Data.orderCode,
+    NewStatus = Data.status,
     (   exists_file('orders.csv')
     ->  csv_read_file('orders.csv', Rows, [functor(row), arity(8)]),
         Rows = [Header | DataRows],
@@ -151,11 +153,11 @@ update_order_status_handler(Request) :-
             csv_write_stream(Stream, [Header | UpdatedRows], []),
             close(Stream),
             reply_json(json{
-                "status": "Estado de orden actualizado correctamente",
-                "OrderCode": OrderCode,
-                "NewStatus": NewStatus
+                status:"Estado de orden actualizado correctamente",
+                orderCode:OrderCode,
+                newStatus:NewStatus
             })
-        ;   reply_json(json{"error": "Orden no encontrada"}, [status(404)])
+        ;   reply_json(json{error:"Orden no encontrada"}, [status(404)])
         )
-    ;   reply_json(json{"error": "Archivo de órdenes no existe"}, [status(404)])
+    ;   reply_json(json{error:"Archivo de órdenes no existe"}, [status(404)])
     ).
