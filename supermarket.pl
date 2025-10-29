@@ -1,10 +1,7 @@
-:- use_module(library(http/thread_httpd)).
-:- use_module(library(http/http_dispatch)).
-:- use_module(library(http/http_parameters)).
-:- use_module(library(http/http_json)).
-
 :- use_module(products).
 :- use_module(api).
+
+:- initialization(start).
 
 start :-
     load_products,
@@ -13,10 +10,8 @@ start :-
     ;   Port = 8080
     ),
     format('===> Puerto detectado: ~w~n', [Port]),
-    http_server(http_dispatch, [port(Port), bind_address('0.0.0.0')]),
-    format('===> Servidor escuchando en todas las interfaces (~w)~n', [Port]),
-    writeln('Productos cargados correctamente.'),
-    thread_get_message(_).   % 👈 mantiene el proceso vivo sin cerrarse
+    start_server(Port), 
+    writeln('Productos cargados correctamente.').
 
 
 % consult('C:/Users/Reyner/Documents/UNA_2025/II_SEMESTRE/PARADIGMAS/Proyecto_prolog/supermarket.pl').
