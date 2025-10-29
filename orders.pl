@@ -1,41 +1,41 @@
 :- module(orders, [log_order/8]).
 :- use_module(library(csv)).
+:- dynamic order_counter/1.
 
-% =========================================
-% log_order(Date, Code, ProductName, Quantity, Place, ReceiverName, Status, OrderCode)
-% =========================================
-log_order(Date, Code, ProductName, Quantity, Place, ReceiverName, StatusIn, _OrderCode) :-
-    % Si no se pasa estado, usar 'Pendiente'
-    (   var(StatusIn)
-    ->  Status = 'Pendiente'
-    ;   Status = StatusIn
+% =========================
+% Generar código incremental
+% =========================
+next_order_code(Code) :-
+    (   order_counter(N)
+    ->  N1 is N + 1,
+        retract(order_counter(N))
+    ;   N1 = 1
+    ),
+    asserta(order_counter(N1)),
+    format(atom(Code), 'ORD~|~`0t~d~4+', [N1]).
+
+% =========================
+% Registrar una orden
+% =========================
+log_order(Date, ProductCode, ProductName, Quantity, Place, ReceiverName, Status, OrderCode) :-
+    next_order_code(OrderCode),
+    % Si no existe, crear encabezado
+    (   \+ exists_file('orders.csv')
+    ->  open('orders.csv', write, Stream, [encoding(utf8)]),
+        csv_write_stream(Stream, [row('Date','Code','Product','Quantity','DeliveryPlace','ReceiverName','Status','OrderCode')], []),
+        close(Stream)
+    ;   true
     ),
 
-    % Crear archivo si no existe
-    (   exists_file('orders.csv')
-    ->  true
-    ;   csv_write_file('orders.csv',
-            [row('Date','Code','Product','Quantity','DeliveryPlace','ReceiverName','Status','OrderCode')], [])
-    ),
-
-    % Leer pedidos existentes
-    csv_read_file('orders.csv', Rows, [functor(row), arity(8)]),
-    length(Rows, TotalRows),
-    (   TotalRows > 1
-    ->  nth1(TotalRows, Rows, LastRow),
-        arg(8, LastRow, LastOrderCode),
-        atom_concat('ORD', NumAtom, LastOrderCode),
-        atom_number(NumAtom, Num),
-        NextNum is Num + 1
-    ;   NextNum = 1
-    ),
-    format(atom(NewOrderCode), 'ORD~|~`0t~d~4+', [NextNum]),  % genera ORD0001, ORD0002, ...
-
-    % Escribir al CSV
-    open('orders.csv', append, Stream),
+    open('orders.csv', append, Stream, [encoding(utf8)]),
     csv_write_stream(Stream,
-        [row(Date, Code, ProductName, Quantity, Place, ReceiverName, Status, NewOrderCode)], []),
+        [row(Date, ProductCode, ProductName, Quantity, Place, ReceiverName, Status, OrderCode)], []),
     close(Stream),
 
-    format(' Pedido registrado: ~w (~w unidades) - Código ~w (~w)~n',
-           [ProductName, Quantity, NewOrderCode, Status]).
+    % Evitar que la consola de Railway falle por acentos
+    catch(
+        format('Pedido registrado: ~w (~w unidades) - ~w~n',
+               [ProductName, Quantity, OrderCode]),
+        error(io_error(_,_), _),
+        true
+    ).
