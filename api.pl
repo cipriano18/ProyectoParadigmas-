@@ -14,6 +14,7 @@
 :- http_handler(root(update), update_stock, []).
 :- http_handler(root(orders), orders_post_handler, [method(post)]).
 :- http_handler(root(orders/list), orders_get_handler, [method(get)]).
+:- http_handler(root(orders/update), update_order_status_handler, [method(post)]).
 
 % =========================
 % Inicio del servidor
@@ -129,4 +130,34 @@ orders_get_handler(_Request) :-
         ),
         reply_json(JsonList)
     ;   reply_json([], [status(200)])
+    ).
+% =========================
+% POST /orders/update
+% =========================
+update_order_status_handler(Request) :-
+    http_read_json_dict(Request, Data),
+    OrderCode = Data.order_code,
+    NewStatus = Data.status,
+
+    (   exists_file('orders.csv')
+
+        csv_read_file('orders.csv', Rows, [functor(row), arity(8)]),
+        Rows = [Header | DataRows],
+        % Buscar y actualizar
+        (   select(row(Date, Code, Product, Quantity, Place, Receiver, _OldStatus, OrderCode),
+                   DataRows,
+                   row(Date, Code, Product, Quantity, Place, Receiver, NewStatus, OrderCode),
+                   UpdatedRows)
+      
+            open('orders.csv', write, Stream, [encoding(utf8)]),
+            csv_write_stream(Stream, [Header | UpdatedRows], []),
+            close(Stream),
+            reply_json(json{
+                status: "Estado de orden actualizado correctamente",
+                order_code: OrderCode,
+                new_status: NewStatus
+            })
+        ;   reply_json(json{error: "Orden no encontrada"}, [status(404)])
+        )
+    ;   reply_json(json{error: "Archivo de órdenes no existe"}, [status(404)])
     ).
