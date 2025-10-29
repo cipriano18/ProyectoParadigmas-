@@ -7,17 +7,6 @@
 :- use_module(orders).
 
 % =========================
-% Asegurar que los productos estén cargados
-% =========================
-:- initialization(ensure_products_loaded).
-
-ensure_products_loaded :-
-    (   current_predicate(product/7)
-    ->  ( product(_, _, _, _, _, _, _) -> true ; load_products )
-    ;   load_products
-    ).
-
-% =========================
 % Handlers principales
 % =========================
 :- http_handler(root(products), products_handler, []).
@@ -33,9 +22,9 @@ start_server(Port) :-
     catch(
         http_server(http_dispatch, [port(Port), bind_address('0.0.0.0')]),
         error(socket_error(eaddrinuse, _), _),
-        format('⚠️  Puerto ~w ya está en uso, el servidor sigue activo.~n', [Port])
+        format('  Puerto ~w ya está en uso, el servidor sigue activo.~n', [Port])
     ),
-    format('✅ Servidor iniciado en el puerto ~w~n', [Port]).
+    format(' Servidor iniciado en el puerto ~w~n', [Port]).
 
 % =========================
 % GET /products?name=Banano
@@ -86,7 +75,7 @@ category_handler(Request) :-
     reply_json(Results).
 
 % =========================
-% POST /orders → Crear una orden
+% POST /orders → Crear una orden (sin validación de producto)
 % =========================
 orders_post_handler(Request) :-
     http_read_json_dict(Request, Data),
@@ -97,25 +86,19 @@ orders_post_handler(Request) :-
     Date = Data.date,
     ( _{status:S} :< Data -> Status = S ; Status = 'Pendiente' ),
 
-    (   product(Code, Name, Category, Price, Stock, Unit, Description)
-    ->  NewStock is Stock - Quantity,
-        retract(product(Code, Name, Category, Price, Stock, Unit, Description)),
-        assertz(product(Code, Name, Category, Price, NewStock, Unit, Description)),
-        update_csv(Code, NewStock),
-        log_order(Date, Code, Name, Quantity, Place, Receiver, Status, OrderCode),
-        reply_json(json{
-            status: "Pedido registrado correctamente",
-            code: Code,
-            product: Name,
-            quantity: Quantity,
-            delivery_place: Place,
-            receiver: Receiver,
-            order_code: OrderCode,
-            date: Date,
-            order_status: Status
-        })
-    ;   reply_json(json{error: "Producto no encontrado"}, [status(404)])
-    ).
+    log_order(Date, Code, "Producto no verificado", Quantity, Place, Receiver, Status, OrderCode),
+
+    reply_json(json{
+        status: "Pedido registrado correctamente",
+        code: Code,
+        product: "Producto no verificado",
+        quantity: Quantity,
+        delivery_place: Place,
+        receiver: Receiver,
+        order_code: OrderCode,
+        date: Date,
+        order_status: Status
+    }).
 
 % =========================
 % GET /orders/list → Listar todas las órdenes
